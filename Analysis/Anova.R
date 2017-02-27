@@ -7,8 +7,33 @@ library(plyr)
 #read in data 
 shootings <-read.csv(text=getURL("https://raw.githubusercontent.com/cvcassady/MLProject1/master/Data/fatal-police-shootings-data.csv"),header=T)
 census <-read.csv(text=getURL("https://raw.githubusercontent.com/cvcassady/MLProject1/master/Data/shootings_census.csv"), header = T)
+
 #target attribute
 summary((shootings$body_camera))
+
+#Data Cleaning
+#condensing states in to regions to reduce number of levels
+shootings$region<- ifelse(shootings$state %in% c("ME","NH","VT","MA","RI","CT","NY","PA","NJ"),"Northeast",
+                          ifelse(shootings$state %in% c("MD","DE","DC","VA","WV","NC","SC","KY","TN","GA","FL","AL","MS","AR","OK","TX","LA"),"South",
+                                 ifelse(shootings$state %in% c("ND","SD","NE","KS","MN","IA","WI","IL","IN","OH","MI","MO"),"Midwest","West")))
+
+#codensing armed type into condensed categories
+shootings$armed <- as.character(shootings$armed)
+shootings$armed <- ifelse(shootings$armed %in% c("ax","baseball bat","baseball bat and fireplace poker","baton","bayonet","beer bottle","blunt object",
+                                                 "box cutter","brick","carjack","chain","chain saw","contractor's level","cordless drill","crowbar",
+                                                 "flagpole","flashlight","garden tool","glass shard","hammer","hand torch","hatchet","knife",
+                                                 "lawn mower blade","machete","meat cleaver","metal hand tool","metal object","metal pipe","metal pole",
+                                                 "metal rake","metal stick","oar","pick-axe","piece of wood","pipe","pitchfork","pole","pole and knife",
+                                                 "rock","scissors","screwdriver","sharp object","shovel","spear","stapler","straight edge razor","sword",
+                                                 "Taser","tire iron","toy weapon"),"melee weapon",
+                          ifelse(shootings$armed %in% c("bean-bag gun","crossbow","gun","gun and knife","guns and explosives","hatchet and gun",
+                                                        "machete and gun","nail gun"),"ranged weapon",
+                                 ifelse(shootings$armed %in% c("motorcycle","vehicle"),"vehicle",
+                                        ifelse(shootings$armed %in% c("undetermined","unknown weapon",""),"undetermined","unarmed"))))
+
+#mapping race from letter to race
+shootings$race <- mapvalues(shootings$race, from = c("A", "B", "H", "N", "O", "W"), to = c("Asian", "Black", "Hispanic", "Native American", "Other", "White"))
+
 
 ######Testing Age
 #boxplots
@@ -19,7 +44,6 @@ a1 <- aov(shootings$age ~ shootings$body_camera)
 summary(a1)
 
 ######Testing Race
-shootings$race <- mapvalues(shootings$race, from = c("A", "B", "H", "N", "O", "W"), to = c("Asian", "Black", "Hispanic", "Native American", "Other", "White"))
 race <- table(shootings$race, shootings$body_camera)
 prop.table(race, 2)
 chisq.test(race)
@@ -50,27 +74,15 @@ prop.table(flee, 2)
 chisq.test(flee)
 
 #####armed
-## set NA's in armed to undetermined and combine various categories:
-shootings$armed <- as.character(shootings$armed)
-shootings$armed <- ifelse(shootings$armed %in% c("ax","baseball bat","baseball bat and fireplace poker","baton","bayonet","beer bottle","blunt object",
-                                     "box cutter","brick","carjack","chain","chain saw","contractor's level","cordless drill","crowbar",
-                                     "flagpole","flashlight","garden tool","glass shard","hammer","hand torch","hatchet","knife",
-                                     "lawn mower blade","machete","meat cleaver","metal hand tool","metal object","metal pipe","metal pole",
-                                     "metal rake","metal stick","oar","pick-axe","piece of wood","pipe","pitchfork","pole","pole and knife",
-                                     "rock","scissors","screwdriver","sharp object","shovel","spear","stapler","straight edge razor","sword",
-                                     "Taser","tire iron","toy weapon"),"melee weapon",
-                    ifelse(shootings$armed %in% c("bean-bag gun","crossbow","gun","gun and knife","guns and explosives","hatchet and gun",
-                                            "machete and gun","nail gun"),"ranged weapon",
-                           ifelse(shootings$armed %in% c("motorcycle","vehicle"),"vehicle",
-                                  ifelse(shootings$armed %in% c("undetermined","unknown weapon",""),"undetermined","unarmed"))))
 shootings$armed <- factor(shootings$armed)
 armed <- table(shootings$armed, shootings$body_camera)
 prop.table(armed, 2)
 chisq.test(armed)
 
 #####Region
-shootings$region <- mapvalues(shootings$state, from = c("ME","NH","VT","MA","RI","CT","NY","PA","NJ"), to = c("Northeast", "Northeast","Northeast", "Northeast","Northeast", "Northeast","Northeast", "Northeast","Northeast"))
-shootings$region <- mapvalues(shootings$state, from = c("ME","NH","VT","MA","RI","CT","NY","PA","NJ"), to = c("Northeast", "Northeast","Northeast", "Northeast","Northeast", "Northeast","Northeast", "Northeast","Northeast"))
+region <- table(shootings$region, shootings$body_camera)
+prop.table(region, 2)
+chisq.test(region)
 
 ######Population
 #boxplots
