@@ -1,19 +1,20 @@
 # Data cleaning 
+setwd("C:\\Users\\hexel\\Documents\\SYS 6016\\Project 1\\MLProject1")
 
-suppressPackageStartupMessages( {
+# Load required packages
+suppressPackageStartupMessages({
+  library(readr)
+  require(RCurl)
   library(lubridate)
-  library(dplyr)
-  library(ggplot2)
-  library(e1071)
-  library(caret)
 })
 
-setwd("C:\\Users\\hexel\\Documents\\SYS 6016\\Project 1\\")
+# Load the data into environment
+fps <- read.csv(text=getURL("https://raw.githubusercontent.com/cvcassady/MLProject1/master/Data/fatal-police-shootings-data.csv"),header=T)
 
-fps <- read.csv("data-police-shootings\\fatal-police-shootings-data.csv", header=T)
-
+# Review the data
 summary(fps)
 
+### Data cleaning process:
 ## id is good
 
 ## make name a character vector
@@ -24,9 +25,20 @@ fps$date <- ymd(fps$date)
 
 ## manner_of_death is good, though pointless
 
-## set NA's in armed to undetermined
+## set NA's in armed to undetermined and combine various categories:
 fps$armed <- as.character(fps$armed)
-fps$armed <- factor(ifelse(fps$armed=="", "undetermined", fps$armed))
+fps$armed <- ifelse(fps$armed %in% c("ax","baseball bat","baseball bat and fireplace poker","baton","bayonet","beer bottle","blunt object",
+                                     "box cutter","brick","carjack","chain","chain saw","contractor's level","cordless drill","crowbar",
+                                     "flagpole","flashlight","garden tool","glass shard","hammer","hand torch","hatchet","knife",
+                                     "lawn mower blade","machete","meat cleaver","metal hand tool","metal object","metal pipe","metal pole",
+                                     "metal rake","metal stick","oar","pick-axe","piece of wood","pipe","pitchfork","pole","pole and knife",
+                                     "rock","scissors","screwdriver","sharp object","shovel","spear","stapler","straight edge razor","sword",
+                                     "Taser","tire iron","toy weapon"),"melee weapon", 
+                    ifelse(fps$armed %in% c("bean-bag gun","crossbow","gun","gun and knife","guns and explosives","hatchet and gun",
+                                            "machete and gun","nail gun"),"ranged weapon", 
+                           ifelse(fps$armed %in% c("motorcycle","vehicle"),"vehicle", 
+                                  ifelse(fps$armed %in% c("undetermined","unknown weapon",""),"undetermined","unarmed"))))
+fps$armed <- factor(fps$armed)
 
 ## age has 48 NA's, median imputation is possible
 fps$age[is.na(fps$age)] <- median(fps$age, na.rm=T)
@@ -42,6 +54,7 @@ fps$name[fps$race==""]
 # can't really impute the race if the race is unknown
 # we should probably remove the NA's for race 
 fps <- fps[!(fps$race==""),]
+fps$race <- factor(as.character(fps$race))
 
 ## make city a character vector
 fps$city <- as.character(fps$city)
@@ -49,47 +62,24 @@ fps$city <- as.character(fps$city)
 ## make state a character vector
 fps$state <- as.character(fps$state)
 
-## signs_of_mental_illness is good
+## signs_of_mental_illness is good, reordering factors
+fps$signs_of_mental_illness <- factor(as.character(fps$signs_of_mental_illness), levels=c("True", "False"))
 
 ## thread_level is good 
-levels(fps$threat_level)
+# levels(fps$threat_level)
 # can probably combine other and undetermined together
-fps$threat_level <- as.character(fps$threat_level)
-fps$threat_level <- factor(ifelse(fps$threat_level=="other" | fps$threat_level=="undetermined", "other", fps$threat_level))
+# fps$threat_level <- as.character(fps$threat_level)
+# fps$threat_level <- factor(ifelse(fps$threat_level=="other" | fps$threat_level=="undetermined", "other", fps$threat_level))
 
 ## set missing flee observations to other
 fps$flee <- as.character(fps$flee)
 fps$flee <- factor(ifelse(fps$flee=="", "Other", fps$flee))
 
-## body_camera is good
+## body_camera is good, reordering factors
+fps$body_camera <- factor(as.character(fps$body_camera), levels=c("True", "False"))
 
 ## Subset to 2015 and 2016 police shootings only
 fps <- fps[fps$date<="2016-12-31",]
 
-## Basic Naive Bayes implementation
-# train/test set division
-set.seed(123)
-indices = sample(1:nrow(fps), as.integer(nrow(fps)*0.75))
-train = fps[indices,]
-test= fps[-indices,]
-# NB on signs_of_mental_illness
-modNB <- naiveBayes(signs_of_mental_illness ~ armed+age+gender+race+threat_level+flee+body_camera, data=train)
-pred <- predict(modNB, test)
-confusionMatrix(pred, test$signs_of_mental_illness)
-# NB on threat_level
-modNB2 <- naiveBayes(threat_level ~ armed+age+gender+race+signs_of_mental_illness+flee+body_camera, data=train)
-pred2 <- predict(modNB2, test)
-confusionMatrix(pred2, test$threat_level)
-
-
-
-# some other findings
-summary(fps$race)
-nrow(fps[fps$signs_of_mental_illness=="True" & fps$threat_level=="attack",]) # 288
-nrow(fps[fps$signs_of_mental_illness=="True",]) # 471
-nrow(fps[fps$signs_of_mental_illness=="False" & fps$threat_level=="attack",]) # 928
-nrow(fps[fps$signs_of_mental_illness=="False",]) # 1392
-
-
-# Obvious improvement would be to run this model through CV
-# We can try SVM, Random Forest and ANN
+### Saving data frame
+saveRDS(fps, "fps.rds")
