@@ -52,6 +52,7 @@ chisq.test(race)
 threat <- table(shootings$threat, shootings$body_camera)
 prop.table(threat, 2)
 chisq.test(threat)
+chisq.test(threat)$expected
 
 ######mental illness
 ill <- table(shootings$signs_of_mental_illness, shootings$body_camera)
@@ -99,5 +100,3 @@ boxplot(as.integer(Persons.in.poverty..percent)~body_camera,data=census, main="D
 #anova
 a3 <- aov(as.integer(census$Persons.in.poverty..percent) ~ census$body_camera)
 summary(a3)
-
-
