@@ -72,10 +72,6 @@ fps$state <- as.character(fps$state)
 fps$signs_of_mental_illness <- factor(as.character(fps$signs_of_mental_illness), levels=c("True", "False"))
 
 # thread_level is good 
-# levels(fps$threat_level)
-# can probably combine other and undetermined together
-# fps$threat_level <- as.character(fps$threat_level)
-# fps$threat_level <- factor(ifelse(fps$threat_level=="other" | fps$threat_level=="undetermined", "other", fps$threat_level))
 
 # set missing flee observations to other
 fps$flee <- as.character(fps$flee)

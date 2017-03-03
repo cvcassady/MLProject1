@@ -4,7 +4,7 @@
 ## Colin Cassady
 
 ### Classification (part 2)
-setwd("C:\\Users\\hexel\\Documents\\SYS 6016\\Project 1\\MLProject1")
+setwd("C:\\Users\\hexel\\Documents\\SYS 6016\\Project 1\\MLProject1\\Analysis\\")
 
 # Load required packages
 suppressPackageStartupMessages({
